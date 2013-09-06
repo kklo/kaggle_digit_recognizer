@@ -46,12 +46,12 @@ print "DC Compoent removed..."
 
 # PCA writening
 # keep 25% of the principle components
-pca_dim = int(configs.IMAGE_WIDTH * configs.IMAGE_WIDTH * 0.25)
+pca_dim = int(configs.IMAGE_WIDTH * 0.25)
 pca = PCA(n_components=pca_dim, whiten=True)
 for x in X:
     m = np.reshape(x, (configs.IMAGE_WIDTH, configs.IMAGE_WIDTH))
     m_white = pca.fit_transform(m)
-    x = np.reshape(m_white, configs.IMAGE_WIDTH * configs.IMAGE_WIDTH)
+    x = np.reshape(m_white, m_white.shape[0] * m_white.shape[1])
 print "perform PCA whitening..."
 
 # Normalize the data
@@ -60,7 +60,6 @@ print "Data normalized..."
 
 # Using naive Bayesian
 model = GaussianNB()
-
 # 5-fold Cross Validation
 print_cv_score_summary(model, X, Y, cv=5)
 
