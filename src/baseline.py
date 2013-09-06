@@ -31,9 +31,6 @@ print "Data loaded..."
 X = np.array(trainFile.data)
 Y = np.array(trainFile.labels)
 
-X = X[:50]
-Y = Y[:50]
-
 # Normalize the data
 trainData_normalized = preprocessing.normalize(X , norm='l1')
 print "Data normalized..."
