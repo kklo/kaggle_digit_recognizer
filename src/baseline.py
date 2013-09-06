@@ -17,7 +17,7 @@ import numpy as np
 
 # print out the cross validation scores
 def print_cv_score_summary(model, X, y, cv):
-    scores = cross_val_score(model, X, y, cv=cv, verbose=1, n_jobs=-1)
+    scores = cross_val_score(model, X, y, cv=cv, verbose=1, n_jobs=1)
     print("Accuracy:")
     print("mean: {:3f}, stdev: {:3f}".format(
         np.mean(scores), np.std(scores)))
