@@ -1,6 +1,8 @@
 #####################################################################
-# The accuray is around 0.21
-#
+# 
+#   PCA: 0.20 C=100000.0, gamma=0.25, score=0.925000
+#   PCA: 0.25 C=100000.0, gamma=0.25, score=0.945000
+#   PCA: 0.30 C=100000.0, gamma=0.25, score=0.900000
 # Preprocessing:
 #   DC Component removal
 #   Multi-level zoning feature extraction
@@ -22,16 +24,14 @@ import config.configs as configs
 from sklearn import preprocessing
 from sklearn.cross_validation import KFold
 from sklearn.cross_validation import cross_val_score
-from sklearn.naive_bayes import GaussianNB
-from sklearn import svm
-from sklearn.ensemble import AdaBoostClassifier
+from sklearn.grid_search import GridSearchCV
+from sklearn.svm import SVC
 from sklearn.decomposition import PCA
-from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 
 # print out the cross validation scores
 def print_cv_score_summary(model, X, y, cv):
-    scores = cross_val_score(model, X, y, cv=cv, verbose=1, n_jobs=1)
+    scores = cross_val_score(model, X, y, cv=cv, verbose=0, n_jobs=1)
     print("Accuracy:")
     print("mean: {:3f}, stdev: {:3f}".format(
         np.mean(scores), np.std(scores)))
@@ -66,23 +66,29 @@ for x in X:
     features.append(fv)
 print "Feature extracted..."
 
+features = features[:2000]
+Y = np.array(Y[:2000])
+
+parameters = {'C':10. ** np.arange(5,20), 'gamma':2. ** np.arange(-5, -1)}
+
 # PCA Dimension reduction
-for n_components in [0.25, 0.35]:
+for n_components in [0.20, 0.25, 0.30]:
     pca = PCA(n_components=len(features[0]) * n_components)
     features = pca.fit_transform(features)
     print "PCA dimension reduction done..."
 
-    # Normalize the data
-    features = preprocessing.normalize(features , norm='l1')
-    print "Data normalized..."
+    # Scale the data
+    scaler = preprocessing.MinMaxScaler()
+    features = scaler.fit_transform(features)
+    features = np.array(features)
+    print "Data Scaled..."
 
-    # Using Random Forest
-    for n_trees in [10, 100, 1000]:
-        model = RandomForestClassifier(n_estimators=n_trees)
-        # 5-fold Cross Validation
-        print("pca %s random forest %s  " % (n_components, n_trees))
-        print_cv_score_summary(model, features, Y, cv=5)
-
+    # Using SVM
+    model = SVC(cache_size=1024, kernel='rbf')
+    grid = GridSearchCV(model, parameters, cv=5, verbose=3, n_jobs=1)
+    grid.fit(features, Y)
+    print n_components
+    print grid.best_estimator_
 
 #classifier = NaiveBayes(trainData_normalized, trainFile.labels)
 #classifier.Train()
