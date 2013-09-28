@@ -1,5 +1,4 @@
-# combining KNN, SVM and Random Forest
-# accuracy around 0.97414	
+# Accuracy = 0.957904761905
 
 from utils.train_file import TrainFile
 from utils.test_file import TestFile
@@ -53,25 +52,27 @@ features = pca.fit_transform(X_normalized)
 print "Transform done ..."
 
 # split into training and testing
-#cutoff = len(Y) * 0.75
-#features_train = np.array(features[:cutoff])
-#Y_train = np.array(Y[:cutoff])
-#features_test = np.array(features[cutoff:])
-#Y_test = np.array(Y[cutoff:])
-features_train = np.array(features)
-Y_train = np.array(Y)
-X_test = np.array(testFile.data)
-X_test_normalized_avg = normalize_with_avg(X_test, avg_digit)
-X_test_normalized = preprocessing.normalize(X_test_normalized_avg)
-features_test = pca.transform(X_test_normalized)
-features_test = np.array(features_test)
+cutoff = len(Y) * 0.75
+features_train = np.array(features[:cutoff])
+Y_train = np.array(Y[:cutoff])
+features_test = np.array(features[cutoff:])
+Y_test = np.array(Y[cutoff:])
+#features_train = np.array(features)
+#Y_train = np.array(Y)
+#X_test = np.array(testFile.data)
+#X_test_normalized_avg = normalize_with_avg(X_test, avg_digit)
+#X_test_normalized = preprocessing.normalize(X_test_normalized_avg)
+#features_test = pca.transform(X_test_normalized)
+#features_test = np.array(features_test)
 
 
 # Ensemble classifier
 classifiers = [
-    KNeighborsClassifier(n_neighbors=3),
-    SVC(cache_size=1024, kernel='rbf', C=10, gamma=0.21022410381342863),
-    RandomForestClassifier(n_estimators=500)
+    RandomForestClassifier(n_estimators=100, criterion='gini'),
+    RandomForestClassifier(n_estimators=100, criterion='entropy'),
+    ExtraTreesClassifier(n_estimators=100, criterion='gini'),
+    ExtraTreesClassifier(n_estimators=100, criterion='entropy'),
+    GradientBoostingClassifier(n_estimators=100),
 ]
 
 Y_predict = [ [] for i in xrange(len(classifiers)) ]
@@ -85,10 +86,9 @@ Y_vote = []
 for i in xrange(len(Y_predict[0])):
     counter = Counter([Y_predict[classifier_id][i] for classifier_id in xrange(len(classifiers))])
     vote = counter.most_common(1)[0][0]
-    if len(counter.most_common(1)) > 1: vote = Y_predit[0][0] # trust the kNN more
     Y_vote.append(vote)
     
-#accuracy(Y_vote, Y_test)
+accuracy(Y_vote, Y_test)
 
-submissionFile = SubmissionFile("submission/submission04.ensemble.eigenface.csv", Y_vote, ["ImageId", "Label"], True)
-submissionFile.Write()
+#submissionFile = SubmissionFile("submission/submission04.ensemble.eigenface.csv", Y_vote, ["ImageId", "Label"], True)
+#submissionFile.Write()

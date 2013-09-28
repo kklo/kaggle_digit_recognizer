@@ -1,5 +1,4 @@
-# combining KNN, SVM and Random Forest
-# accuracy around 0.97414	
+# Accuracy around:  0.970714285714
 
 from utils.train_file import TrainFile
 from utils.test_file import TestFile
@@ -16,9 +15,7 @@ from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from collections import Counter
+from sklearn.linear_model import LogisticRegression
 import numpy as np
 
 def accuracy(Y_predict, Y_test):
@@ -53,18 +50,21 @@ features = pca.fit_transform(X_normalized)
 print "Transform done ..."
 
 # split into training and testing
-#cutoff = len(Y) * 0.75
-#features_train = np.array(features[:cutoff])
-#Y_train = np.array(Y[:cutoff])
-#features_test = np.array(features[cutoff:])
-#Y_test = np.array(Y[cutoff:])
-features_train = np.array(features)
-Y_train = np.array(Y)
-X_test = np.array(testFile.data)
-X_test_normalized_avg = normalize_with_avg(X_test, avg_digit)
-X_test_normalized = preprocessing.normalize(X_test_normalized_avg)
-features_test = pca.transform(X_test_normalized)
-features_test = np.array(features_test)
+cutoff = len(Y) * 0.65
+features_train = np.array(features[:cutoff])
+Y_train = np.array(Y[:cutoff])
+cutoff_stack = len(Y) * 0.9
+features_stack = np.array(features[cutoff:cutoff_stack])
+Y_stack = np.array(Y[cutoff:cutoff_stack])
+features_test = np.array(features[cutoff_stack:])
+Y_test = np.array(Y[cutoff:])
+#features_train = np.array(features)
+#Y_train = np.array(Y)
+#X_test = np.array(testFile.data)
+#X_test_normalized_avg = normalize_with_avg(X_test, avg_digit)
+#X_test_normalized = preprocessing.normalize(X_test_normalized_avg)
+#features_test = pca.transform(X_test_normalized)
+#features_test = np.array(features_test)
 
 
 # Ensemble classifier
@@ -74,21 +74,24 @@ classifiers = [
     RandomForestClassifier(n_estimators=500)
 ]
 
-Y_predict = [ [] for i in xrange(len(classifiers)) ]
+Y_predict_test = [ [] for i in xrange(len(classifiers)) ]
+Y_predict_train = [ [] for i in xrange(len(classifiers)) ]
 
 for i, classifier in enumerate(classifiers):
     print 'Training classifier %d' % (i)
     classifier.fit(features_train, Y_train)
-    Y_predict[i] = classifier.predict(features_test)
+    Y_predict_train[i] = classifier.predict(features_stack)
+    Y_predict_test[i] = classifier.predict(features_test)
 
-Y_vote = []
-for i in xrange(len(Y_predict[0])):
-    counter = Counter([Y_predict[classifier_id][i] for classifier_id in xrange(len(classifiers))])
-    vote = counter.most_common(1)[0][0]
-    if len(counter.most_common(1)) > 1: vote = Y_predit[0][0] # trust the kNN more
-    Y_vote.append(vote)
-    
-#accuracy(Y_vote, Y_test)
+Y_predict_train = np.array(Y_predict_train)
+Y_predict_test = np.array(Y_predict_test)
 
-submissionFile = SubmissionFile("submission/submission04.ensemble.eigenface.csv", Y_vote, ["ImageId", "Label"], True)
-submissionFile.Write()
+# Stacking
+stack_classifier = RandomForestClassifier(n_estimators=100)
+print "Training the Stacker"
+stack_classifier.fit(Y_predict_train.T, Y_stack)
+predit = stack_classifier.predict(Y_predict_test.T)
+print accuracy(predit, Y_test)
+
+#submissionFile = SubmissionFile("submission/submission05.ensemble.stacking.eigenface.csv", Y_vote, ["ImageId", "Label"], True)
+#submissionFile.Write()
